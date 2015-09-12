@@ -2,21 +2,27 @@ var express = require('express');
 var router = express.Router();
 var db = require('monk')(process.env.MONGOLAB_URI);
 var posts = db.get('posts');
+var comments = db.get('comments');
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
-  posts.find({}, function(err, docs) {
+  posts.find({}).then(function(docs) {
     console.log(req.body);
-    res.render('posts/index.hbs', {posts: docs});
+    res.render('posts/index', {posts: docs});
   });
+  // posts.find({}, function(err, docs) {
+  //   console.log(req.body);
+  //   res.render('posts/index.hbs', {posts: docs});
+  // });
 });
 
 router.post('/', function (req, res, next) {
-  req.body.comments = []
-  console.log('new post body:', req.body);
-  posts.insert(req.body, function(err, doc) {
+  posts.insert(req.body).then(function (doc) {
     res.redirect('/posts')
-  });
+  })
+  // posts.insert(req.body, function(err, doc) {
+  //   res.redirect('/posts')
+  // });
 });
 
 router.get('/new', function (req, res, next) {
@@ -24,68 +30,65 @@ router.get('/new', function (req, res, next) {
 });
 
 router.get('/:id', function (req, res, next) {
-  posts.findOne({_id: req.params.id}, function (err, doc) {
-    res.render('posts/show', doc)
+  var locals = {}
+  posts.findOne({_id: req.params.id}).then(function(doc) {
+    locals.post = doc
+    comments.find({postId: req.params.id}).then(function(docs) {
+      locals.comments = docs
+      res.render('posts/show', locals)
+    });
   });
+
+  // posts.findOne({_id: req.params.id}, function (err, doc) {
+  //   if (err) throw error;
+  //   comments.find({postId: req.params.id}, function (err, docs) { //this is like the comments show page
+  //     res.render('posts/show', {post: doc, comments: docs})
+  //   });
+  // });
 });
 
 router.get('/:id/edit', function (req, res, next) {
-  posts.findOne({_id: req.params.id}, function (err, doc){
-    if (err) throw error;
-    res.render('posts/edit', doc)
-  });
+  var locals = {}
+  posts.findOne({_id: req.params.id}).then(function (doc) {
+    locals.post = doc
+    comments.find({postId: req.params.id}).then(function (docs) {
+      locals.comments = docs
+      res.render ('posts/edit', locals)
+    })
+  })
+  // posts.findOne({_id: req.params.id}, function (err, doc){
+  //   if (err) throw error;
+  //   comments.find({postId: req.params.id}, function (err, docs) { //this is like the comments show page
+  //     res.render ('posts/edit', {post: doc, comments: docs})
+  //   })
+  // });
 });
 
 router.post('/:id/update', function (req, res, next) {
-  console.log('is there a comment array?', req.body.comments);
-  posts.findOne({_id: req.params.id}, function (err, doc) {
-    if (err) throw err;
-    req.body.comments = doc.comments // have to find doc and add these in or they don't follow
-    posts.update({_id: req.params.id}, req.body, function (err, doc) {
-      if (err) throw err;
-      res.redirect('/posts/' + req.params.id);
-    });
+  posts.findOne({_id: req.params.id}).then(function () {
+    posts.update({_id: req.params.id}, req.body)
+    res.redirect('/posts/' + req.params.id)
   })
+  // posts.findOne({_id: req.params.id}, function (err, doc) {
+  //   if (err) throw err;
+  //   posts.update({_id: req.params.id}, req.body, function (err, doc) {
+  //     if (err) throw err;
+  //     res.redirect('/posts/' + req.params.id);
+  //   });
+  // });
 });
 
 router.post('/:id/delete', function (req, res, next) {
-  posts.remove({_id: req.params.id}, function (err, doc) {
-    if (err) throw err;
-    res.redirect('/posts');
-  });
+  Promise.all([comments.remove({postId: req.params.id}), posts.remove({_id: req.params.id})])
+  res.redirect('/posts')
+
+  // comments.remove({postId: req.params.id}, function (err, docs) {
+  //   if (err) throw err;
+  //   posts.remove({_id: req.params.id}, function (err, doc) {
+  //     if (err) throw err;
+  //     res.redirect('/posts');
+  //   });
+  // });
 });
-
-var counter = 0
-router.post('/:id/comments', function (req, res, next) {
-  counter++
-  req.body.id = counter
-  console.log(req.body);
-  console.log(req.params.id);
-  posts.findOne({_id: req.params.id}, function (err, doc) {
-    if (err) throw err;
-    console.log('doc to push to:', doc);
-    console.log('hi');
-    doc.comments.push(req.body)
-    posts.update({_id: req.params.id}, doc, function (err, doc) {
-      console.log(doc);
-      res.redirect('/posts/' + req.params.id)
-    })
-  })
-})
-
-router.post('/:id/comments/:id/delete', function (req, res, next) {
-  console.log('req.body', req.body); // this is the post id, passed in from the hidden field in the form
-  console.log('req.params.id', req.params.id); // this is the comment id
-  posts.findOne({_id: req.body.postId}, function(err, doc) {
-    var comments = doc.comments
-    var filteredComments = comments.filter(function(element) {
-      return parseInt(element.id) !== parseInt(req.params.id) // return the comments that do not match the comment to delete
-    })
-    doc.comments = filteredComments // doc without deleted comment
-    posts.update({_id: req.body.postId}, doc, function(err, thing) {
-      res.redirect('/posts/' + req.body.postId)
-    })
-  })
-})
 
 module.exports = router;

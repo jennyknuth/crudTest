@@ -1,27 +1,27 @@
 <div class="show">
   <a href="/">back to all posts</a>
-  <h2>{{title}}</h2>
-  <h3>{{author}}</h3>
+  <h2>{{post.title}}</h2>
+  <h3>{{post.author}}</h3>
   <p>
-    {{text}}
+    {{post.text}}
   </p>
-  <a href="/posts/{{_id}}/edit">
+  <a href="/posts/{{post._id}}/edit">
     <button type="button" name="button">edit post</button>
   </a>
   <h3>Comments</h3>
   {{#each comments}}
   <li>{{comment}} —{{commentAuthor}}</li>
-  <form action="/posts/{{../_id}}/comments/{{id}}/delete" method="post">
-    <input type="hidden" name="postId" value="{{../_id}}">
-    <!-- <input type="hidden" name="name" value=""> -->
+  <form action="/posts/{{../post._id}}/comments/{{_id}}/delete" method="post">
+    <input type="hidden" name="postId" value="{{../post._id}}">
     <input type="submit" value="delete">
   </form>
   {{/each}}
   <h3>Add a comment:</h3>
-  <form action="/posts/{{_id}}/comments" method="post">
+  <form action="/posts/{{post._id}}/comments" method="post">
     <input type="text" name="commentAuthor" placeholder="name">
     <input type="text" name="comment" placeholder="comment">
     <input type="submit" value="add comment">
+    <input type="hidden" name="postId" value="{{post._id}}">
   </form>
 
 </div>
