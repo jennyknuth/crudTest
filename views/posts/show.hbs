@@ -10,7 +10,7 @@
   </a>
   <h3>Comments</h3>
   {{#each comments}}
-  <li>{{comment}} —{{commentAuthor}} {{id}}</li>
+  <li>{{comment}} —{{commentAuthor}}</li>
   <form action="/posts/{{../_id}}/comments/{{id}}/delete" method="post">
     <input type="hidden" name="postId" value="{{../_id}}">
     <!-- <input type="hidden" name="name" value=""> -->

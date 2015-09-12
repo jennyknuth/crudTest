@@ -37,11 +37,15 @@ router.get('/:id/edit', function (req, res, next) {
 });
 
 router.post('/:id/update', function (req, res, next) {
-  console.log('is there a comment array?', req.body);
-  posts.update({_id: req.params.id}, req.body, function (err, doc) {
+  console.log('is there a comment array?', req.body.comments);
+  posts.findOne({_id: req.params.id}, function (err, doc) {
     if (err) throw err;
-    res.redirect('/posts/' + req.params.id);
-  });
+    req.body.comments = doc.comments // have to find doc and add these in or they don't follow
+    posts.update({_id: req.params.id}, req.body, function (err, doc) {
+      if (err) throw err;
+      res.redirect('/posts/' + req.params.id);
+    });
+  })
 });
 
 router.post('/:id/delete', function (req, res, next) {
@@ -77,9 +81,7 @@ router.post('/:id/comments/:id/delete', function (req, res, next) {
     var filteredComments = comments.filter(function(element) {
       return parseInt(element.id) !== parseInt(req.params.id) // return the comments that do not match the comment to delete
     })
-    console.log('filteredComments', filteredComments)
-    doc.comments = filteredComments
-    console.log('doc without comment', doc);
+    doc.comments = filteredComments // doc without deleted comment
     posts.update({_id: req.body.postId}, doc, function(err, thing) {
       res.redirect('/posts/' + req.body.postId)
     })
