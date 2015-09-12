@@ -1,0 +1,22 @@
+<h1>{{title}}</h1>
+
+<a href="posts/new">add a post</a>
+
+{{#each posts}}
+
+  <a href="/posts/{{_id}}">
+    <div class="post">
+      <h3>{{title}}</h3>
+      <p>
+        By {{author}}
+        {{text}}
+
+        <form class="" action="/posts/{{_id}}/delete" method="post">
+          <input type="submit" value="X">
+        </form>
+        
+      </p>
+    </div>
+  </a>
+
+{{/each}}
